@@ -1,17 +1,27 @@
 /*
- * Copyright (c) 2023, Thomas Meaney
- * All rights reserved.
+ * Copyright (c) 2018-2023, Thomas Meaney
+ * Copyright (c) contributors
  *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package de.eintosti.buildsystem.command;
 
-import de.eintosti.buildsystem.BuildSystem;
+import de.eintosti.buildsystem.BuildSystemPlugin;
 import de.eintosti.buildsystem.Messages;
-import de.eintosti.buildsystem.world.BuildWorld;
+import de.eintosti.buildsystem.api.world.BuildWorld;
+import de.eintosti.buildsystem.world.BuildWorldManager;
 import de.eintosti.buildsystem.world.SpawnManager;
-import de.eintosti.buildsystem.world.WorldManager;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.command.Command;
@@ -24,11 +34,11 @@ import java.util.AbstractMap;
 
 public class SpawnCommand implements CommandExecutor {
 
-    private final BuildSystem plugin;
+    private final BuildSystemPlugin plugin;
     private final SpawnManager spawnManager;
-    private final WorldManager worldManager;
+    private final BuildWorldManager worldManager;
 
-    public SpawnCommand(BuildSystem plugin) {
+    public SpawnCommand(BuildSystemPlugin plugin) {
         this.plugin = plugin;
         this.spawnManager = plugin.getSpawnManager();
         this.worldManager = plugin.getWorldManager();

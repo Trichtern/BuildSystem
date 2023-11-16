@@ -1,28 +1,40 @@
 /*
- * Copyright (c) 2023, Thomas Meaney
- * All rights reserved.
+ * Copyright (c) 2018-2023, Thomas Meaney
+ * Copyright (c) contributors
  *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package de.eintosti.buildsystem.navigator.inventory;
 
 import com.cryptomorin.xseries.XMaterial;
 import com.cryptomorin.xseries.XSound;
-import de.eintosti.buildsystem.BuildSystem;
+import de.eintosti.buildsystem.BuildSystemPlugin;
 import de.eintosti.buildsystem.Messages;
-import de.eintosti.buildsystem.navigator.settings.WorldDisplay;
-import de.eintosti.buildsystem.navigator.settings.WorldFilter;
-import de.eintosti.buildsystem.navigator.settings.WorldSort;
-import de.eintosti.buildsystem.settings.Settings;
+import de.eintosti.buildsystem.api.settings.WorldDisplay;
+import de.eintosti.buildsystem.api.settings.WorldFilter;
+import de.eintosti.buildsystem.api.settings.WorldSort;
+import de.eintosti.buildsystem.api.world.BuildWorld;
+import de.eintosti.buildsystem.api.world.data.Visibility;
+import de.eintosti.buildsystem.api.world.data.WorldData;
+import de.eintosti.buildsystem.api.world.data.WorldStatus;
+import de.eintosti.buildsystem.navigator.settings.BuildWorldFilter;
+import de.eintosti.buildsystem.settings.CraftSettings;
 import de.eintosti.buildsystem.settings.SettingsManager;
 import de.eintosti.buildsystem.util.InventoryUtils;
 import de.eintosti.buildsystem.util.PaginatedInventory;
 import de.eintosti.buildsystem.util.PlayerChatInput;
-import de.eintosti.buildsystem.world.BuildWorld;
-import de.eintosti.buildsystem.world.WorldManager;
-import de.eintosti.buildsystem.world.data.WorldData;
-import de.eintosti.buildsystem.world.data.WorldStatus;
+import de.eintosti.buildsystem.world.BuildWorldManager;
 import de.eintosti.buildsystem.world.modification.CreateInventory;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -41,17 +53,17 @@ public class FilteredWorldsInventory extends PaginatedInventory implements Liste
 
     private static final int MAX_WORLDS = 36;
 
-    private final BuildSystem plugin;
+    private final BuildSystemPlugin plugin;
     private final InventoryUtils inventoryUtils;
     private final SettingsManager settingsManager;
-    private final WorldManager worldManager;
+    private final BuildWorldManager worldManager;
 
     private final String inventoryName;
     private final String noWorldsText;
     private final Visibility visibility;
     private final Set<WorldStatus> validStatus;
 
-    public FilteredWorldsInventory(BuildSystem plugin, String inventoryName, String noWorldsText, Visibility visibility, Set<WorldStatus> validStatus) {
+    public FilteredWorldsInventory(BuildSystemPlugin plugin, String inventoryName, String noWorldsText, Visibility visibility, Set<WorldStatus> validStatus) {
         this.plugin = plugin;
         this.inventoryUtils = plugin.getInventoryUtil();
         this.settingsManager = plugin.getSettingsManager();
@@ -139,13 +151,16 @@ public class FilteredWorldsInventory extends PaginatedInventory implements Liste
     }
 
     private void addWorldSortItem(Inventory inventory, Player player) {
-        Settings settings = settingsManager.getSettings(player);
+        CraftSettings settings = settingsManager.getSettings(player);
         WorldSort worldSort = settings.getWorldDisplay().getWorldSort();
-        inventoryUtils.addItemStack(inventory, 45, XMaterial.BOOK, Messages.getString("world_sort_title", player), worldSort.getItemLore(player));
+        inventoryUtils.addItemStack(inventory, 45, XMaterial.BOOK,
+                Messages.getString("world_sort_title", player),
+                Messages.getStringList(worldSort.getLoreKey(), player)
+        );
     }
 
     private void addWorldFilterItem(Inventory inventory, Player player) {
-        Settings settings = settingsManager.getSettings(player);
+        CraftSettings settings = settingsManager.getSettings(player);
         WorldFilter worldFilter = settings.getWorldDisplay().getWorldFilter();
 
         List<String> lore = new ArrayList<>();
@@ -180,7 +195,7 @@ public class FilteredWorldsInventory extends PaginatedInventory implements Liste
             return false;
         }
 
-        if (player.hasPermission(BuildSystem.ADMIN_PERMISSION)) {
+        if (player.hasPermission(BuildSystemPlugin.ADMIN_PERMISSION)) {
             return true;
         }
 
@@ -208,7 +223,7 @@ public class FilteredWorldsInventory extends PaginatedInventory implements Liste
         }
 
         Player player = (Player) event.getWhoClicked();
-        Settings settings = settingsManager.getSettings(player);
+        CraftSettings settings = settingsManager.getSettings(player);
         WorldDisplay worldDisplay = settings.getWorldDisplay();
 
         switch (event.getSlot()) {
@@ -221,7 +236,7 @@ public class FilteredWorldsInventory extends PaginatedInventory implements Liste
                 WorldFilter worldFilter = worldDisplay.getWorldFilter();
                 WorldFilter.Mode currentMode = worldFilter.getMode();
                 if (event.isShiftClick()) {
-                    worldFilter.setMode(WorldFilter.Mode.NONE);
+                    worldFilter.setMode(BuildWorldFilter.Mode.NONE);
                     worldFilter.setText("");
                     openInventory(player);
                 } else if (event.isLeftClick()) {
@@ -254,15 +269,5 @@ public class FilteredWorldsInventory extends PaginatedInventory implements Liste
         }
 
         inventoryUtils.manageInventoryClick(event, player, itemStack);
-    }
-
-    public enum Visibility {
-        PRIVATE,
-        PUBLIC,
-        IGNORE;
-
-        public static Visibility matchVisibility(boolean isPrivateWorld) {
-            return isPrivateWorld ? PRIVATE : PUBLIC;
-        }
     }
 }

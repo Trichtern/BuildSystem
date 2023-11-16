@@ -115,6 +115,41 @@ not to forget: let each player decide which settings whey think are best for the
 
 ![Graph](https://bstats.org/signatures/bukkit/BuildSystem.svg)
 
+## Developer API
+
+**Maven:**
+
+```xml
+
+<repository>
+  <id>eintosti-releases</id>
+  <url>https://repo.eintosti.de/releases</url>
+</repository>
+```
+
+```xml
+
+<dependency>
+  <groupId>de.eintosti</groupId>
+  <artifactId>buildsystem-api</artifactId>
+  <version>version</version>
+</dependency>
+ ```
+
+**Or alternatively, with Gradle:**
+
+```kotlin
+repositories {
+  maven {
+    url = uri("https://repo.eintosti.de/releases")
+  }
+}
+
+dependencies {
+  compileOnly("de.eintosti:buildsystem-api:version")
+}
+```
+
 ## Contributing
 
 ### To compile...
@@ -146,4 +181,4 @@ that come with them.
 
 ## License
 
-This project is licensed under the [BSD 4-Clause License](LICENSE).
+This project is licensed under the [GNU General Public License v3.0](LICENSE.txt).

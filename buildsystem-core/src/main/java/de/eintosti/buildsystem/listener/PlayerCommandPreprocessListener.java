@@ -1,22 +1,32 @@
 /*
- * Copyright (c) 2023, Thomas Meaney
- * All rights reserved.
+ * Copyright (c) 2018-2023, Thomas Meaney
+ * Copyright (c) contributors
  *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package de.eintosti.buildsystem.listener;
 
 import com.google.common.collect.Sets;
-import de.eintosti.buildsystem.BuildSystem;
+import de.eintosti.buildsystem.BuildSystemPlugin;
 import de.eintosti.buildsystem.Messages;
+import de.eintosti.buildsystem.api.world.BuildWorld;
+import de.eintosti.buildsystem.api.world.data.WorldStatus;
 import de.eintosti.buildsystem.config.ConfigValues;
 import de.eintosti.buildsystem.event.player.PlayerInventoryClearEvent;
 import de.eintosti.buildsystem.settings.SettingsManager;
 import de.eintosti.buildsystem.util.InventoryUtils;
-import de.eintosti.buildsystem.world.BuildWorld;
-import de.eintosti.buildsystem.world.WorldManager;
-import de.eintosti.buildsystem.world.data.WorldStatus;
+import de.eintosti.buildsystem.world.BuildWorldManager;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -31,6 +41,7 @@ import java.util.Set;
 public class PlayerCommandPreprocessListener implements Listener {
 
     private static final Set<String> DISABLED_COMMANDS = Sets.newHashSet(
+            // <editor-fold defaultstate="collapsed" desc="WorldEdit & VoxelSniper Commands">
             "/worldedit",
             "/we",
 
@@ -205,15 +216,16 @@ public class PlayerCommandPreprocessListener implements Listener {
             "/vir",
             "/vl",
             "/vr--"
+            // </editor-fold>
     );
 
-    private final BuildSystem plugin;
+    private final BuildSystemPlugin plugin;
     private final ConfigValues configValues;
     private final InventoryUtils inventoryUtils;
     private final SettingsManager settingsManager;
-    private final WorldManager worldManager;
+    private final BuildWorldManager worldManager;
 
-    public PlayerCommandPreprocessListener(BuildSystem plugin) {
+    public PlayerCommandPreprocessListener(BuildSystemPlugin plugin) {
         this.plugin = plugin;
         this.configValues = plugin.getConfigValues();
 
@@ -255,10 +267,7 @@ public class PlayerCommandPreprocessListener implements Listener {
             }
 
             BuildWorld buildWorld = worldManager.getBuildWorld(player.getWorld().getName());
-            if (buildWorld == null) {
-                return;
-            }
-            if (disableArchivedWorlds(buildWorld, player, event)) {
+            if (buildWorld == null || disableArchivedWorlds(buildWorld, player, event)) {
                 return;
             }
 

@@ -1,6 +1,7 @@
 rootProject.name = "BuildSystem"
 
 include("buildsystem-core")
+include("buildsystem-api")
 
 include("buildsystem-abstraction:adapter-1_12")
 include("buildsystem-abstraction:adapter-1_13")

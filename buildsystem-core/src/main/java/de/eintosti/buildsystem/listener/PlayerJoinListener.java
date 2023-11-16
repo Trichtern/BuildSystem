@@ -1,27 +1,37 @@
 /*
- * Copyright (c) 2023, Thomas Meaney
- * All rights reserved.
+ * Copyright (c) 2018-2023, Thomas Meaney
+ * Copyright (c) contributors
  *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package de.eintosti.buildsystem.listener;
 
-import de.eintosti.buildsystem.BuildSystem;
+import de.eintosti.buildsystem.BuildSystemPlugin;
 import de.eintosti.buildsystem.Messages;
+import de.eintosti.buildsystem.api.settings.Settings;
+import de.eintosti.buildsystem.api.world.BuildWorld;
+import de.eintosti.buildsystem.api.world.data.WorldData;
+import de.eintosti.buildsystem.api.world.data.WorldStatus;
 import de.eintosti.buildsystem.config.ConfigValues;
-import de.eintosti.buildsystem.player.BuildPlayer;
+import de.eintosti.buildsystem.player.BuildPlayerManager;
+import de.eintosti.buildsystem.player.CraftBuildPlayer;
 import de.eintosti.buildsystem.player.LogoutLocation;
-import de.eintosti.buildsystem.player.PlayerManager;
-import de.eintosti.buildsystem.settings.Settings;
 import de.eintosti.buildsystem.settings.SettingsManager;
 import de.eintosti.buildsystem.util.UUIDFetcher;
 import de.eintosti.buildsystem.util.UpdateChecker;
-import de.eintosti.buildsystem.world.BuildWorld;
+import de.eintosti.buildsystem.world.BuildWorldManager;
 import de.eintosti.buildsystem.world.SpawnManager;
-import de.eintosti.buildsystem.world.WorldManager;
-import de.eintosti.buildsystem.world.data.WorldData;
-import de.eintosti.buildsystem.world.data.WorldStatus;
 import io.papermc.lib.PaperLib;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -36,15 +46,15 @@ import java.util.AbstractMap;
 
 public class PlayerJoinListener implements Listener {
 
-    private final BuildSystem plugin;
+    private final BuildSystemPlugin plugin;
     private final ConfigValues configValues;
 
-    private final PlayerManager playerManager;
+    private final BuildPlayerManager playerManager;
     private final SettingsManager settingsManager;
     private final SpawnManager spawnManager;
-    private final WorldManager worldManager;
+    private final BuildWorldManager worldManager;
 
-    public PlayerJoinListener(BuildSystem plugin) {
+    public PlayerJoinListener(BuildSystemPlugin plugin) {
         this.plugin = plugin;
         this.configValues = plugin.getConfigValues();
 
@@ -71,7 +81,7 @@ public class PlayerJoinListener implements Listener {
         Player player = event.getPlayer();
         UUIDFetcher.cacheUser(player.getUniqueId(), player.getName());
 
-        BuildPlayer buildPlayer = playerManager.createBuildPlayer(player);
+        CraftBuildPlayer buildPlayer = playerManager.createBuildPlayer(player);
         manageHidePlayer(player, buildPlayer);
         manageSettings(player, buildPlayer.getSettings());
         teleportToCorrectLocation(player, buildPlayer);
@@ -107,7 +117,7 @@ public class PlayerJoinListener implements Listener {
      * @param player      The player to teleport
      * @param buildPlayer The build-player for the given player
      */
-    private void teleportToCorrectLocation(Player player, BuildPlayer buildPlayer) {
+    private void teleportToCorrectLocation(Player player, CraftBuildPlayer buildPlayer) {
         if (buildPlayer.getSettings().isSpawnTeleport() && spawnManager.spawnExists()) {
             spawnManager.teleport(player);
             return;
@@ -128,7 +138,7 @@ public class PlayerJoinListener implements Listener {
     }
 
     @SuppressWarnings("deprecation")
-    private void manageHidePlayer(Player player, BuildPlayer buildPlayer) {
+    private void manageHidePlayer(Player player, CraftBuildPlayer buildPlayer) {
         // Hide all players to player
         if (buildPlayer.getSettings().isHidePlayers()) {
             Bukkit.getOnlinePlayers().forEach(player::hidePlayer);
@@ -169,7 +179,7 @@ public class PlayerJoinListener implements Listener {
             return;
         }
 
-        UpdateChecker.init(plugin, BuildSystem.SPIGOT_ID)
+        UpdateChecker.init(plugin, BuildSystemPlugin.SPIGOT_ID)
                 .requestUpdateCheck()
                 .whenComplete((result, e) -> {
                     if (result.requiresUpdate()) {

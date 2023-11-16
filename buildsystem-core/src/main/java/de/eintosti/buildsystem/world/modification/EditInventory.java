@@ -1,25 +1,36 @@
 /*
- * Copyright (c) 2023, Thomas Meaney
- * All rights reserved.
+ * Copyright (c) 2018-2023, Thomas Meaney
+ * Copyright (c) contributors
  *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package de.eintosti.buildsystem.world.modification;
 
 import com.cryptomorin.xseries.XMaterial;
 import com.cryptomorin.xseries.XSound;
 import com.google.common.collect.Sets;
-import de.eintosti.buildsystem.BuildSystem;
+import de.eintosti.buildsystem.BuildSystemPlugin;
 import de.eintosti.buildsystem.Messages;
+import de.eintosti.buildsystem.api.world.BuildWorld;
+import de.eintosti.buildsystem.api.world.data.Visibility;
+import de.eintosti.buildsystem.api.world.data.WorldData;
 import de.eintosti.buildsystem.command.subcommand.worlds.SetPermissionSubCommand;
 import de.eintosti.buildsystem.command.subcommand.worlds.SetProjectSubCommand;
 import de.eintosti.buildsystem.config.ConfigValues;
-import de.eintosti.buildsystem.navigator.inventory.FilteredWorldsInventory.Visibility;
-import de.eintosti.buildsystem.player.PlayerManager;
+import de.eintosti.buildsystem.player.BuildPlayerManager;
 import de.eintosti.buildsystem.util.InventoryUtils;
-import de.eintosti.buildsystem.world.BuildWorld;
-import de.eintosti.buildsystem.world.data.WorldData;
+import de.eintosti.buildsystem.world.CraftBuildWorld;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.World;
@@ -42,12 +53,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class EditInventory implements Listener {
 
-    private final BuildSystem plugin;
+    private final BuildSystemPlugin plugin;
     private final ConfigValues configValues;
     private final InventoryUtils inventoryUtils;
-    private final PlayerManager playerManager;
+    private final BuildPlayerManager playerManager;
 
-    public EditInventory(BuildSystem plugin) {
+    public EditInventory(BuildSystemPlugin plugin) {
         this.plugin = plugin;
         this.configValues = plugin.getConfigValues();
         this.inventoryUtils = plugin.getInventoryUtil();
@@ -55,7 +66,7 @@ public class EditInventory implements Listener {
         plugin.getServer().getPluginManager().registerEvents(this, plugin);
     }
 
-    public Inventory getInventory(Player player, BuildWorld buildWorld) {
+    public Inventory getInventory(Player player, CraftBuildWorld buildWorld) {
         Inventory inventory = Bukkit.createInventory(null, 54, Messages.getString("worldeditor_title", player));
         WorldData worldData = buildWorld.getData();
 
@@ -80,7 +91,7 @@ public class EditInventory implements Listener {
         addDifficultyItem(player, inventory, buildWorld);
         inventoryUtils.addItemStack(inventory, 40, inventoryUtils.getStatusItem(worldData.status().get()), "worldeditor_status_item",
                 Messages.getStringList("worldeditor_status_lore", player,
-                        new AbstractMap.SimpleEntry<>("%status%", buildWorld.getData().status().get().getName(player))
+                        new AbstractMap.SimpleEntry<>("%status%", Messages.getDataString(buildWorld.getData().status().get().getKey(), player))
                 )
         );
         inventoryUtils.addItemStack(inventory, 41, XMaterial.ANVIL, Messages.getString("worldeditor_project_item", player),
@@ -97,7 +108,7 @@ public class EditInventory implements Listener {
         return inventory;
     }
 
-    public void openInventory(Player player, BuildWorld buildWorld) {
+    public void openInventory(Player player, CraftBuildWorld buildWorld) {
         player.openInventory(getInventory(player, buildWorld));
     }
 
@@ -162,26 +173,26 @@ public class EditInventory implements Listener {
         );
     }
 
-    public BuildWorld.Time getWorldTime(World bukkitWorld) {
+    public CraftBuildWorld.Time getWorldTime(World bukkitWorld) {
         if (bukkitWorld == null) {
-            return BuildWorld.Time.UNKNOWN;
+            return CraftBuildWorld.Time.UNKNOWN;
         }
 
         int worldTime = (int) bukkitWorld.getTime();
         int noonTime = plugin.getConfigValues().getNoonTime();
 
         if (worldTime >= 0 && worldTime < noonTime) {
-            return BuildWorld.Time.SUNRISE;
+            return CraftBuildWorld.Time.SUNRISE;
         } else if (worldTime >= noonTime && worldTime < 13000) {
-            return BuildWorld.Time.NOON;
+            return CraftBuildWorld.Time.NOON;
         } else {
-            return BuildWorld.Time.NIGHT;
+            return CraftBuildWorld.Time.NIGHT;
         }
     }
 
     private void addBuildersItem(Player player, Inventory inventory, BuildWorld buildWorld) {
         UUID creatorId = buildWorld.getCreatorId();
-        if ((creatorId != null && creatorId.equals(player.getUniqueId())) || player.hasPermission(BuildSystem.ADMIN_PERMISSION)) {
+        if ((creatorId != null && creatorId.equals(player.getUniqueId())) || player.hasPermission(BuildSystemPlugin.ADMIN_PERMISSION)) {
             addSettingsItem(player, inventory, 30, XMaterial.IRON_PICKAXE, buildWorld.getData().buildersEnabled().get(),
                     "worldeditor_builders_item", "worldeditor_builders_lore"
             );
@@ -214,7 +225,7 @@ public class EditInventory implements Listener {
         inventoryUtils.addItemStack(inventory, slot, xMaterial, displayName, lore);
     }
 
-    private void addDifficultyItem(Player player, Inventory inventory, BuildWorld buildWorld) {
+    private void addDifficultyItem(Player player, Inventory inventory, CraftBuildWorld buildWorld) {
         XMaterial xMaterial;
         switch (buildWorld.getData().difficulty().get()) {
             case EASY:
@@ -251,7 +262,7 @@ public class EditInventory implements Listener {
         }
 
         Player player = (Player) event.getWhoClicked();
-        BuildWorld buildWorld = plugin.getPlayerManager().getBuildPlayer(player).getCachedWorld();
+        CraftBuildWorld buildWorld = plugin.getPlayerManager().getBuildPlayer(player).getCachedWorld();
         if (buildWorld == null) {
             player.closeInventory();
             Messages.sendMessage(player, "worlds_edit_error");
@@ -377,13 +388,13 @@ public class EditInventory implements Listener {
         return false;
     }
 
-    private void changeTime(Player player, BuildWorld buildWorld) {
+    private void changeTime(Player player, CraftBuildWorld buildWorld) {
         World bukkitWorld = Bukkit.getWorld(buildWorld.getName());
         if (bukkitWorld == null) {
             return;
         }
 
-        BuildWorld.Time time = getWorldTime(bukkitWorld);
+        CraftBuildWorld.Time time = getWorldTime(bukkitWorld);
         switch (time) {
             case SUNRISE:
                 bukkitWorld.setTime(configValues.getNoonTime());

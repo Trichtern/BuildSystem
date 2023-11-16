@@ -1,21 +1,33 @@
 /*
- * Copyright (c) 2023, Thomas Meaney
- * All rights reserved.
+ * Copyright (c) 2018-2023, Thomas Meaney
+ * Copyright (c) contributors
  *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package de.eintosti.buildsystem.settings;
 
-import de.eintosti.buildsystem.BuildSystem;
+import de.eintosti.buildsystem.BuildSystemPlugin;
 import de.eintosti.buildsystem.Messages;
+import de.eintosti.buildsystem.api.settings.Settings;
+import de.eintosti.buildsystem.api.world.BuildWorld;
+import de.eintosti.buildsystem.api.world.data.WorldData;
 import de.eintosti.buildsystem.config.ConfigValues;
 import de.eintosti.buildsystem.version.util.MinecraftVersion;
-import de.eintosti.buildsystem.world.BuildWorld;
-import de.eintosti.buildsystem.world.WorldManager;
-import de.eintosti.buildsystem.world.data.WorldData;
+import de.eintosti.buildsystem.world.BuildWorldManager;
 import fr.mrmicky.fastboard.FastBoard;
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitTask;
 
@@ -28,13 +40,13 @@ import java.util.stream.Collectors;
 
 public class SettingsManager {
 
-    private final BuildSystem plugin;
+    private final BuildSystemPlugin plugin;
     private final ConfigValues configValues;
-    private final WorldManager worldManager;
+    private final BuildWorldManager worldManager;
 
     private final Map<UUID, FastBoard> boards;
 
-    public SettingsManager(BuildSystem plugin) {
+    public SettingsManager(BuildSystemPlugin plugin) {
         this.plugin = plugin;
         this.configValues = plugin.getConfigValues();
         this.worldManager = plugin.getWorldManager();
@@ -42,11 +54,11 @@ public class SettingsManager {
         this.boards = new HashMap<>();
     }
 
-    public Settings getSettings(UUID uuid) {
+    public CraftSettings getSettings(UUID uuid) {
         return plugin.getPlayerManager().getBuildPlayer(uuid).getSettings();
     }
 
-    public Settings getSettings(Player player) {
+    public CraftSettings getSettings(Player player) {
         return getSettings(player.getUniqueId());
     }
 
@@ -56,7 +68,7 @@ public class SettingsManager {
      * @param player   The player object
      * @param settings The player's settings
      */
-    public void startScoreboard(Player player, Settings settings) {
+    public void startScoreboard(Player player, CraftSettings settings) {
         if (!settings.isScoreboard()) {
             stopScoreboard(player, settings);
             return;
@@ -75,7 +87,7 @@ public class SettingsManager {
             return;
         }
 
-        Settings settings = getSettings(player);
+        CraftSettings settings = getSettings(player);
         FastBoard board = new FastBoard(player);
         this.boards.put(player.getUniqueId(), board);
 
@@ -143,13 +155,13 @@ public class SettingsManager {
     // Is there an easier way of doing this?
     private String parseWorldInformation(Player player, BuildWorld buildWorld, String input) {
         if (buildWorld == null) {
-            return "§f-";
+            return ChatColor.WHITE + "-";
         }
 
         WorldData worldData = buildWorld.getData();
         switch (input) {
             case "%status%":
-                return worldData.status().get().getName(player);
+                return Messages.getDataString(worldData.status().get().getKey(), player);
             case "%permission%":
                 return worldData.permission().get();
             case "%project%":
@@ -165,11 +177,11 @@ public class SettingsManager {
             case "%lastunloaded%":
                 return Messages.formatDate(worldData.lastUnloaded().get());
             default:
-                return "§f-";
+                return ChatColor.WHITE + "-";
         }
     }
 
-    private void stopScoreboard(Player player, Settings settings) {
+    private void stopScoreboard(Player player, CraftSettings settings) {
         BukkitTask scoreboardTask = settings.getScoreboardTask();
         if (scoreboardTask != null) {
             scoreboardTask.cancel();

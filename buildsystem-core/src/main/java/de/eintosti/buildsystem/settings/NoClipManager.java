@@ -1,14 +1,25 @@
 /*
- * Copyright (c) 2023, Thomas Meaney
- * All rights reserved.
+ * Copyright (c) 2018-2023, Thomas Meaney
+ * Copyright (c) contributors
  *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package de.eintosti.buildsystem.settings;
 
 import com.google.common.collect.Sets;
-import de.eintosti.buildsystem.BuildSystem;
+import de.eintosti.buildsystem.BuildSystemPlugin;
+import de.eintosti.buildsystem.api.settings.Settings;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
@@ -26,11 +37,11 @@ import java.util.UUID;
 
 public class NoClipManager {
 
-    private final BuildSystem plugin;
+    private final BuildSystemPlugin plugin;
     private final Map<UUID, GameMode> previousGameMode;
     private final Set<UUID> noClipPlayers;
 
-    public NoClipManager(BuildSystem plugin) {
+    public NoClipManager(BuildSystemPlugin plugin) {
         this.plugin = plugin;
         this.noClipPlayers = new HashSet<>();
         this.previousGameMode = new HashMap<>();
@@ -115,7 +126,7 @@ public class NoClipManager {
      * @param player   The player to add
      * @param settings The player's settings
      */
-    public void startNoClip(Player player, Settings settings) {
+    public void startNoClip(Player player, CraftSettings settings) {
         if (!settings.isNoClip()) {
             noClipPlayers.remove(player.getUniqueId());
             return;

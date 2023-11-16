@@ -1,9 +1,19 @@
 /*
- * Copyright (c) 2023, Thomas Meaney
- * All rights reserved.
+ * Copyright (c) 2018-2023, Thomas Meaney
+ * Copyright (c) contributors
  *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package de.eintosti.buildsystem.util;
 
@@ -11,25 +21,26 @@ import com.cryptomorin.xseries.SkullUtils;
 import com.cryptomorin.xseries.XMaterial;
 import com.cryptomorin.xseries.XSound;
 import com.cryptomorin.xseries.messages.Titles;
-import de.eintosti.buildsystem.BuildSystem;
+import de.eintosti.buildsystem.BuildSystemPlugin;
 import de.eintosti.buildsystem.Messages;
+import de.eintosti.buildsystem.api.settings.WorldDisplay;
+import de.eintosti.buildsystem.api.settings.WorldSort;
+import de.eintosti.buildsystem.api.world.BuildWorld;
+import de.eintosti.buildsystem.api.world.Builder;
+import de.eintosti.buildsystem.api.world.data.WorldData;
+import de.eintosti.buildsystem.api.world.data.WorldStatus;
+import de.eintosti.buildsystem.api.world.data.WorldType;
 import de.eintosti.buildsystem.config.ConfigValues;
 import de.eintosti.buildsystem.config.SetupConfig;
 import de.eintosti.buildsystem.navigator.inventory.FilteredWorldsInventory;
 import de.eintosti.buildsystem.navigator.inventory.NavigatorInventory;
-import de.eintosti.buildsystem.navigator.settings.WorldDisplay;
-import de.eintosti.buildsystem.navigator.settings.WorldFilter;
-import de.eintosti.buildsystem.navigator.settings.WorldSort;
-import de.eintosti.buildsystem.player.PlayerManager;
-import de.eintosti.buildsystem.settings.Settings;
+import de.eintosti.buildsystem.navigator.settings.BuildWorldFilter;
+import de.eintosti.buildsystem.player.BuildPlayerManager;
+import de.eintosti.buildsystem.settings.CraftSettings;
 import de.eintosti.buildsystem.settings.SettingsManager;
 import de.eintosti.buildsystem.tabcomplete.WorldsTabComplete;
-import de.eintosti.buildsystem.world.BuildWorld;
-import de.eintosti.buildsystem.world.Builder;
-import de.eintosti.buildsystem.world.WorldManager;
-import de.eintosti.buildsystem.world.data.WorldData;
-import de.eintosti.buildsystem.world.data.WorldStatus;
-import de.eintosti.buildsystem.world.data.WorldType;
+import de.eintosti.buildsystem.world.BuildWorldManager;
+import de.eintosti.buildsystem.world.CraftBuildWorld;
 import de.eintosti.buildsystem.world.modification.EditInventory;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
@@ -56,17 +67,17 @@ import java.util.stream.Collectors;
 
 public class InventoryUtils {
 
-    private final BuildSystem plugin;
+    private final BuildSystemPlugin plugin;
     private final ConfigValues configValues;
     private final SetupConfig setupConfig;
 
-    private final PlayerManager playerManager;
+    private final BuildPlayerManager playerManager;
 
     private XMaterial normalCreateItem, flatCreateItem, netherCreateItem, endCreateItem, voidCreateItem, customCreateItem;
     private XMaterial normalDefaultItem, flatDefaultItem, netherDefaultItem, endDefaultItem, voidDefaultItem, importedDefaultItem;
     private XMaterial notStartedItem, inProgressItem, almostFinishedItem, finishedItem, archivedItem, hiddenItem;
 
-    public InventoryUtils(BuildSystem plugin) {
+    public InventoryUtils(BuildSystemPlugin plugin) {
         this.plugin = plugin;
         this.configValues = plugin.getConfigValues();
         this.setupConfig = new SetupConfig(plugin);
@@ -168,7 +179,7 @@ public class InventoryUtils {
         addItemStack(inventory, position, material, displayName, Arrays.asList(lore));
     }
 
-    public void addGlassPane(BuildSystem plugin, Player player, Inventory inventory, int position) {
+    public void addGlassPane(BuildSystemPlugin plugin, Player player, Inventory inventory, int position) {
         addItemStack(inventory, position, getColouredGlassPane(plugin, player), " ");
     }
 
@@ -249,7 +260,7 @@ public class InventoryUtils {
     /**
      * Manage clicking in a {@link FilteredWorldsInventory}.
      * <p>
-     * If the clicked item is the icon of a {@link BuildWorld}, the click is managed by {@link InventoryUtils#manageWorldItemClick(InventoryClickEvent, Player, ItemMeta, BuildWorld)}.
+     * If the clicked item is the icon of a {@link BuildWorld}, the click is managed by {@link InventoryUtils#manageWorldItemClick(InventoryClickEvent, Player, ItemMeta, CraftBuildWorld)}.
      * Otherwise, the {@link NavigatorInventory} is opened if the glass pane at the bottom of the inventory is clicked.
      *
      * @param event     The click event object to modify
@@ -273,7 +284,7 @@ public class InventoryUtils {
         }
 
         if (slot >= 9 && slot <= 44) {
-            BuildWorld buildWorld = plugin.getWorldManager().getBuildWorld(getWorldName(player, displayName));
+            CraftBuildWorld buildWorld = plugin.getWorldManager().getBuildWorld(getWorldName(player, displayName));
             manageWorldItemClick(event, player, itemMeta, buildWorld);
             return;
         }
@@ -290,7 +301,7 @@ public class InventoryUtils {
      * If the click is a...
      * <ul>
      *   <l>...left click, the world is loaded (if previously unloaded) and the player is teleported to said world.</li>
-     *   <li>...right click and the player is permitted to edit the world {@link WorldManager#isPermitted(Player, String, String)},
+     *   <li>...right click and the player is permitted to edit the world {@link BuildWorldManager#isPermitted(Player, String, String)},
      *       the {@link EditInventory} for the world is opened for said player.
      *       If the player does not the the required permission the click is handled as a normal left click.</li>
      * </ul>
@@ -300,7 +311,7 @@ public class InventoryUtils {
      * @param itemMeta   The item meta of the clicked item
      * @param buildWorld The world represents by the clicked item
      */
-    private void manageWorldItemClick(InventoryClickEvent event, Player player, ItemMeta itemMeta, BuildWorld buildWorld) {
+    private void manageWorldItemClick(InventoryClickEvent event, Player player, ItemMeta itemMeta, CraftBuildWorld buildWorld) {
         if (event.isLeftClick() || !plugin.getWorldManager().isPermitted(player, WorldsTabComplete.WorldsArgument.EDIT.getPermission(), buildWorld.getName())) {
             performNonEditClick(player, itemMeta);
             return;
@@ -329,8 +340,8 @@ public class InventoryUtils {
     }
 
     private void teleport(Player player, String worldName) {
-        WorldManager worldManager = plugin.getWorldManager();
-        BuildWorld buildWorld = worldManager.getBuildWorld(worldName);
+        BuildWorldManager worldManager = plugin.getWorldManager();
+        CraftBuildWorld buildWorld = worldManager.getBuildWorld(worldName);
         if (buildWorld == null) {
             return;
         }
@@ -351,13 +362,13 @@ public class InventoryUtils {
 
     /**
      * Gets the worlds in the order they are to be displayed.
-     * First, the {@link WorldFilter} is applied. Then, the list of worlds is sorted using the {@link WorldSort}.
+     * First, the {@link BuildWorldFilter} is applied. Then, the list of worlds is sorted using the {@link WorldSort}.
      *
      * @param worldManager The world manager object
      * @param settings     The settings that provide the sorting method
      * @return The list of sorted worlds
      */
-    public List<BuildWorld> getDisplayOrder(WorldManager worldManager, Settings settings) {
+    public List<BuildWorld> getDisplayOrder(BuildWorldManager worldManager, CraftSettings settings) {
         WorldDisplay worldDisplay = settings.getWorldDisplay();
         List<BuildWorld> buildWorlds = worldManager.getBuildWorlds().stream()
                 .filter(worldDisplay.getWorldFilter().apply())
@@ -403,9 +414,8 @@ public class InventoryUtils {
      */
     private List<String> getLore(Player player, BuildWorld buildWorld) {
         WorldData worldData = buildWorld.getData();
-        @SuppressWarnings("unchecked")
         Map.Entry<String, Object>[] placeholders = new Map.Entry[]{
-                new AbstractMap.SimpleEntry<>("%status%", worldData.status().get().getName(player)),
+                new AbstractMap.SimpleEntry<>("%status%", Messages.getDataString(worldData.status().get().getKey(), player)),
                 new AbstractMap.SimpleEntry<>("%project%", worldData.project().get()),
                 new AbstractMap.SimpleEntry<>("%permission%", worldData.permission().get()),
                 new AbstractMap.SimpleEntry<>("%creator%", buildWorld.hasCreator() ? buildWorld.getCreator() : "-"),
@@ -454,7 +464,7 @@ public class InventoryUtils {
      * @param player     The player used to format the placeholders
      * @param buildWorld The world which provides the builders
      * @return The formatted list of builders which have been added to the given world
-     * @see BuildWorld#getBuildersInfo()
+     * @see CraftBuildWorld#getBuildersInfo(Player)
      */
     private List<String> formatBuilders(Player player, BuildWorld buildWorld) {
         String template = Messages.getString("world_item_builders_builder_template", player);
@@ -483,7 +493,7 @@ public class InventoryUtils {
         return builderNames;
     }
 
-    public void fillMultiInvWithGlass(BuildSystem plugin, Inventory inventory, Player player, int currentPage, int numOfPages) {
+    public void fillMultiInvWithGlass(BuildSystemPlugin plugin, Inventory inventory, Player player, int currentPage, int numOfPages) {
         for (int i = 0; i <= 8; i++) {
             addGlassPane(plugin, player, inventory, i);
         }
@@ -493,17 +503,17 @@ public class InventoryUtils {
         }
     }
 
-    public XMaterial getColouredGlass(BuildSystem plugin, Player player) {
+    public XMaterial getColouredGlass(BuildSystemPlugin plugin, Player player) {
         SettingsManager settingsManager = plugin.getSettingsManager();
-        Settings settings = settingsManager.getSettings(player);
+        CraftSettings settings = settingsManager.getSettings(player);
 
         Optional<XMaterial> glass = XMaterial.matchXMaterial(settings.getDesignColor().name() + "_STAINED_GLASS");
         return glass.orElse(XMaterial.BLACK_STAINED_GLASS);
     }
 
-    public XMaterial getColouredGlassPane(BuildSystem plugin, Player player) {
+    public XMaterial getColouredGlassPane(BuildSystemPlugin plugin, Player player) {
         SettingsManager settingsManager = plugin.getSettingsManager();
-        Settings settings = settingsManager.getSettings(player);
+        CraftSettings settings = settingsManager.getSettings(player);
 
         Optional<XMaterial> glass = XMaterial.matchXMaterial(settings.getDesignColor().name() + "_STAINED_GLASS_PANE");
         return glass.orElse(XMaterial.BLACK_STAINED_GLASS_PANE);

@@ -1,18 +1,28 @@
 /*
- * Copyright (c) 2023, Thomas Meaney
- * All rights reserved.
+ * Copyright (c) 2018-2023, Thomas Meaney
+ * Copyright (c) contributors
  *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package de.eintosti.buildsystem.settings;
 
 import com.cryptomorin.xseries.XMaterial;
 import com.cryptomorin.xseries.XSound;
-import de.eintosti.buildsystem.BuildSystem;
+import de.eintosti.buildsystem.BuildSystemPlugin;
 import de.eintosti.buildsystem.Messages;
+import de.eintosti.buildsystem.api.settings.NavigatorType;
 import de.eintosti.buildsystem.config.ConfigValues;
-import de.eintosti.buildsystem.navigator.settings.NavigatorType;
 import de.eintosti.buildsystem.util.InventoryUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.enchantments.Enchantment;
@@ -29,13 +39,13 @@ import org.bukkit.potion.PotionEffectType;
 
 public class SettingsInventory implements Listener {
 
-    private final BuildSystem plugin;
+    private final BuildSystemPlugin plugin;
     private final ConfigValues configValues;
 
     private final InventoryUtils inventoryUtils;
     private final SettingsManager settingsManager;
 
-    public SettingsInventory(BuildSystem plugin) {
+    public SettingsInventory(BuildSystemPlugin plugin) {
         this.plugin = plugin;
         this.configValues = plugin.getConfigValues();
 
@@ -48,7 +58,7 @@ public class SettingsInventory implements Listener {
         Inventory inventory = Bukkit.createInventory(null, 45, Messages.getString("settings_title", player));
         fillGuiWithGlass(player, inventory);
 
-        Settings settings = settingsManager.getSettings(player);
+        CraftSettings settings = settingsManager.getSettings(player);
         addDesignItem(inventory, player);
         addClearInventoryItem(inventory, player);
         addSettingsItem(player, inventory, 13, XMaterial.DIAMOND_AXE, settings.isDisableInteract(), "settings_disableinteract_item", "settings_disableinteract_lore");
@@ -58,7 +68,7 @@ public class SettingsInventory implements Listener {
         addSettingsItem(player, inventory, 21, configValues.getNavigatorItem(), settings.getNavigatorType() == NavigatorType.NEW, "settings_new_navigator_item", "settings_new_navigator_lore");
         addSettingsItem(player, inventory, 22, XMaterial.GOLDEN_CARROT, settings.isNightVision(), "settings_nightvision_item", "settings_nightvision_lore");
         addSettingsItem(player, inventory, 23, XMaterial.BRICKS, settings.isNoClip(), "settings_no_clip_item", "settings_no_clip_lore");
-        addSettingsItem(player, inventory, 24, XMaterial.IRON_TRAPDOOR, settings.isTrapDoor(), "settings_open_trapdoors_item", "settings_open_trapdoors_lore");
+        addSettingsItem(player, inventory, 24, XMaterial.IRON_TRAPDOOR, settings.isOpenTrapDoors(), "settings_open_trapdoors_item", "settings_open_trapdoors_lore");
         addSettingsItem(player, inventory, 29, XMaterial.FERN, settings.isPlacePlants(), "settings_placeplants_item", "settings_placeplants_lore");
         addSettingsItem(player, inventory, 30, XMaterial.PAPER, settings.isScoreboard(), configValues.isScoreboard() ? "settings_scoreboard_item" : "settings_scoreboard_disabled_item", configValues.isScoreboard() ? "settings_scoreboard_lore" : "settings_scoreboard_disabled_lore");
         addSettingsItem(player, inventory, 31, getSlabBreakingMaterial(), settings.isSlabBreaking(), "settings_slab_breaking_item", "settings_slab_breaking_lore");
@@ -98,7 +108,7 @@ public class SettingsInventory implements Listener {
     }
 
     private void addClearInventoryItem(Inventory inventory, Player player) {
-        Settings settings = settingsManager.getSettings(player);
+        CraftSettings settings = settingsManager.getSettings(player);
         XMaterial xMaterial = settings.isClearInventory() ? XMaterial.MINECART : XMaterial.CHEST_MINECART;
         addSettingsItem(player, inventory, 12, xMaterial, settings.isClearInventory(),
                 "settings_clear_inventory_item", "settings_clear_inventory_lore"
@@ -124,7 +134,7 @@ public class SettingsInventory implements Listener {
         }
 
         Player player = (Player) event.getWhoClicked();
-        Settings settings = settingsManager.getSettings(player);
+        CraftSettings settings = settingsManager.getSettings(player);
 
         switch (event.getSlot()) {
             case 11:
@@ -181,7 +191,7 @@ public class SettingsInventory implements Listener {
                 }
                 break;
             case 24:
-                settings.setTrapDoor(!settings.isTrapDoor());
+                settings.setOpenTrapDoors(!settings.isOpenTrapDoors());
                 break;
 
             case 29:
@@ -216,7 +226,7 @@ public class SettingsInventory implements Listener {
     }
 
     @SuppressWarnings("deprecation")
-    private void toggleHidePlayers(Player player, Settings settings) {
+    private void toggleHidePlayers(Player player, CraftSettings settings) {
         if (settings.isHidePlayers()) {
             Bukkit.getOnlinePlayers().forEach(player::hidePlayer);
         } else {

@@ -1,16 +1,27 @@
 /*
- * Copyright (c) 2023, Thomas Meaney
- * All rights reserved.
+ * Copyright (c) 2018-2023, Thomas Meaney
+ * Copyright (c) contributors
  *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package de.eintosti.buildsystem.config;
 
-import de.eintosti.buildsystem.BuildSystem;
-import de.eintosti.buildsystem.world.BuildWorld;
-import de.eintosti.buildsystem.world.BuildWorldCreator;
-import de.eintosti.buildsystem.world.WorldManager;
+import de.eintosti.buildsystem.BuildSystemPlugin;
+import de.eintosti.buildsystem.api.world.BuildWorld;
+import de.eintosti.buildsystem.world.BuildWorldManager;
+import de.eintosti.buildsystem.world.CraftBuildWorld;
+import de.eintosti.buildsystem.world.CraftBuildWorldCreator;
 import org.bukkit.World;
 
 import java.util.ArrayList;
@@ -20,21 +31,22 @@ import java.util.logging.Logger;
 
 public class WorldConfig extends ConfigurationFile {
 
-    private final BuildSystem plugin;
+
+    private final BuildSystemPlugin plugin;
     private final Logger logger;
 
-    public WorldConfig(BuildSystem plugin) {
+    public WorldConfig(BuildSystemPlugin plugin) {
         super(plugin, "worlds.yml");
         this.plugin = plugin;
         this.logger = plugin.getLogger();
     }
 
-    public void saveWorlds(Collection<BuildWorld> buildWorlds) {
+    public void saveWorlds(Collection<CraftBuildWorld> buildWorlds) {
         buildWorlds.forEach(buildWorld -> getFile().set("worlds." + buildWorld.getName(), buildWorld.serialize()));
         saveFile();
     }
 
-    public void loadWorlds(WorldManager worldManager) {
+    public void loadWorlds(BuildWorldManager worldManager) {
         boolean loadAllWorlds = !plugin.getConfigValues().isUnloadWorlds();
         if (loadAllWorlds) {
             logger.info("*** All worlds will be loaded now ***");
@@ -70,7 +82,7 @@ public class WorldConfig extends ConfigurationFile {
             return LoadResult.NOT_BLACKLISTED;
         }
 
-        World world = new BuildWorldCreator(plugin, buildWorld).generateBukkitWorld();
+        World world = new CraftBuildWorldCreator(plugin, buildWorld).generateBukkitWorld();
         if (world == null) {
             return LoadResult.FAILED;
         }

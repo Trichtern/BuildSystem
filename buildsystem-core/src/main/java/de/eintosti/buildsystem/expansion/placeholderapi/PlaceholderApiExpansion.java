@@ -1,19 +1,29 @@
 /*
- * Copyright (c) 2023, Thomas Meaney
- * All rights reserved.
+ * Copyright (c) 2018-2023, Thomas Meaney
+ * Copyright (c) contributors
  *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package de.eintosti.buildsystem.expansion.placeholderapi;
 
-import de.eintosti.buildsystem.BuildSystem;
+import de.eintosti.buildsystem.BuildSystemPlugin;
 import de.eintosti.buildsystem.Messages;
-import de.eintosti.buildsystem.settings.Settings;
+import de.eintosti.buildsystem.api.world.data.WorldData;
+import de.eintosti.buildsystem.settings.CraftSettings;
 import de.eintosti.buildsystem.settings.SettingsManager;
-import de.eintosti.buildsystem.world.BuildWorld;
-import de.eintosti.buildsystem.world.WorldManager;
-import de.eintosti.buildsystem.world.data.WorldData;
+import de.eintosti.buildsystem.world.BuildWorldManager;
+import de.eintosti.buildsystem.world.CraftBuildWorld;
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
@@ -23,11 +33,11 @@ public class PlaceholderApiExpansion extends PlaceholderExpansion {
 
     private static final String SETTINGS_KEY = "settings";
 
-    private final BuildSystem plugin;
+    private final BuildSystemPlugin plugin;
     private final SettingsManager settingsManager;
-    private final WorldManager worldManager;
+    private final BuildWorldManager worldManager;
 
-    public PlaceholderApiExpansion(BuildSystem plugin) {
+    public PlaceholderApiExpansion(BuildSystemPlugin plugin) {
         this.plugin = plugin;
         this.settingsManager = plugin.getSettingsManager();
         this.worldManager = plugin.getWorldManager();
@@ -126,7 +136,7 @@ public class PlaceholderApiExpansion extends PlaceholderExpansion {
      */
     @Nullable
     private String parseSettingsPlaceholder(Player player, String identifier) {
-        Settings settings = settingsManager.getSettings(player);
+        CraftSettings settings = settingsManager.getSettings(player);
         String settingIdentifier = identifier.split("_")[1];
 
         switch (settingIdentifier.toLowerCase()) {
@@ -159,7 +169,7 @@ public class PlaceholderApiExpansion extends PlaceholderExpansion {
             case "spawnteleport":
                 return String.valueOf(settings.isSpawnTeleport());
             case "opentrapdoors":
-                return String.valueOf(settings.isTrapDoor());
+                return String.valueOf(settings.isOpenTrapDoors());
             default:
                 return null;
         }
@@ -186,7 +196,7 @@ public class PlaceholderApiExpansion extends PlaceholderExpansion {
             identifier = splitString[0];
         }
 
-        BuildWorld buildWorld = worldManager.getBuildWorld(worldName);
+        CraftBuildWorld buildWorld = worldManager.getBuildWorld(worldName);
         if (buildWorld == null) {
             return "-";
         }
@@ -232,11 +242,11 @@ public class PlaceholderApiExpansion extends PlaceholderExpansion {
             case "spawn":
                 return worldData.customSpawn().get();
             case "status":
-                return worldData.status().get().getName(player);
+                return Messages.getDataString(worldData.status().get().getKey(), player);
             case "time":
                 return buildWorld.getWorldTime();
             case "type":
-                return buildWorld.getType().getName(player);
+                return Messages.getDataString(buildWorld.getType().getKey(), player);
             case "world":
                 return buildWorld.getName();
             default:

@@ -2,7 +2,7 @@ name: BuildSystem
 version: ${version}
 api-version: "1.13"
 author: einTosti
-main: de.eintosti.buildsystem.BuildSystem
+main: de.eintosti.buildsystem.BuildSystemPlugin
 description: Powerful, easy to use system for builders
 website: https://buildsystem.eintosti.de
 softdepend: [ LuckPerms, PlaceholderAPI, WorldEdit ]
