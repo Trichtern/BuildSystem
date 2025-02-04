@@ -25,6 +25,7 @@ import de.eintosti.buildsystem.player.LogoutLocation;
 import de.eintosti.buildsystem.player.PlayerManager;
 import de.eintosti.buildsystem.settings.Settings;
 import de.eintosti.buildsystem.settings.SettingsManager;
+import de.eintosti.buildsystem.util.UUIDFetcher;
 import de.eintosti.buildsystem.util.UpdateChecker;
 import de.eintosti.buildsystem.world.BuildWorld;
 import de.eintosti.buildsystem.world.SpawnManager;
@@ -78,6 +79,7 @@ public class PlayerJoinListener implements Listener {
     @SuppressWarnings("deprecation")
     public void onPlayerJoin(PlayerJoinEvent event) {
         Player player = event.getPlayer();
+        UUIDFetcher.cacheUser(player.getUniqueId(), player.getName());
 
         BuildPlayer buildPlayer = playerManager.createBuildPlayer(player);
         manageHidePlayer(player, buildPlayer);

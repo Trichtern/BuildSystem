@@ -365,7 +365,7 @@ public class BuildWorld implements ConfigurationSerializable {
      * @return Whether the player is a builder
      */
     public boolean isBuilder(UUID uuid) {
-        return this.builders.parallelStream().anyMatch(builder -> builder.getUniqueId().equals(uuid));
+        return this.builders.stream().anyMatch(builder -> builder.getUniqueId().equals(uuid));
     }
 
     /**

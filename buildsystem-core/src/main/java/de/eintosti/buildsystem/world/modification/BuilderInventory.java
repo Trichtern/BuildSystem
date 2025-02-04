@@ -76,8 +76,13 @@ public class BuilderInventory extends PaginatedInventory implements Listener {
         if (creator == null || creator.getName().equalsIgnoreCase("-")) {
             inventoryUtils.addItemStack(inventory, 4, XMaterial.BARRIER, Messages.getString("worldeditor_builders_no_creator_item", player));
         } else {
-            inventoryUtils.addSkull(inventory, 4, Messages.getString("worldeditor_builders_creator_item", player), Profileable.of(creator.getUniqueId()), Messages.getString("worldeditor_builders_creator_lore", player, new AbstractMap.SimpleEntry<>("%creator%", buildWorld.getCreator()
-                    .getName())));
+            inventoryUtils.addSkull(inventory, 4,
+                    Messages.getString("worldeditor_builders_creator_item", player),
+                    Profileable.of(creator.getUniqueId()),
+                    Messages.getString("worldeditor_builders_creator_lore", player,
+                            new AbstractMap.SimpleEntry<>("%creator%", buildWorld.getCreator().getName())
+                    )
+            );
         }
     }
 
